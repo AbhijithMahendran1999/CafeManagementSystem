@@ -103,7 +103,18 @@ public class Cafe {
                 continue;
             }
 
-            order.put(selected, order.getOrDefault(selected, 0) + qty);
+            // Early muffin stock check (cumulative within this order)
+            if (selected == Item.MUFFIN) {
+                int currentMuffinsInOrder = order.getOrDefault(Item.MUFFIN, 0);
+                if (currentMuffinsInOrder + qty > muffinsInStock) {
+                    System.out.println("Not enough muffins in stock. Order cancelled.\n");
+                    return;
+                }
+                order.put(Item.MUFFIN, currentMuffinsInOrder + qty);
+            } else {
+                // Non-muffin items have no stock limit
+                order.put(selected, order.getOrDefault(selected, 0) + qty);
+            }
         }
 
         if (order.isEmpty()) {
@@ -111,17 +122,12 @@ public class Cafe {
             return;
         }
 
-        int muffinsRequested = order.getOrDefault(Item.MUFFIN, 0);
-        if (muffinsRequested > muffinsInStock) {
-            System.out.println("Not enough muffins in stock. Order cancelled.\n");
-            return;
-        }
+        // (No need for a second muffin stock check here since we already validated during item entry.)
 
+        // Calculate total
         BigDecimal total = BigDecimal.ZERO;
         for (Map.Entry<Item, Integer> entry : order.entrySet()) {
-            total = total.add(
-                prices.get(entry.getKey()).multiply(new BigDecimal(entry.getValue()))
-            );
+            total = total.add(prices.get(entry.getKey()).multiply(new BigDecimal(entry.getValue())));
         }
 
         System.out.println("Total: " + money(total));
@@ -131,6 +137,8 @@ public class Cafe {
             return;
         }
 
+        // Process order
+        int muffinsRequested = order.getOrDefault(Item.MUFFIN, 0);
         muffinsInStock -= muffinsRequested;
         for (Map.Entry<Item, Integer> entry : order.entrySet()) {
             salesQty.put(entry.getKey(), salesQty.get(entry.getKey()) + entry.getValue());
@@ -141,6 +149,7 @@ public class Cafe {
         BigDecimal change = payment.subtract(total);
         System.out.println("Change: " + money(change) + "\n");
     }
+
 
     private void handleBake() {
         muffinsInStock += 25;
@@ -201,7 +210,7 @@ public class Cafe {
     private int readInt(String prompt) {
         System.out.print(prompt);
         while (!scanner.hasNextInt()) {
-            System.out.println("Please enter a whole number.");
+//            System.out.println("Please enter a whole number.");
             scanner.nextLine();
             System.out.print(prompt);
         }
