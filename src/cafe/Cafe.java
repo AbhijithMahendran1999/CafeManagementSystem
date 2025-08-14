@@ -14,7 +14,7 @@ public class Cafe {
 
     // --- State ---
     private final Map<Item, BigDecimal> prices = new HashMap<>();
-    private final Map<Item, Integer> salesQty = new HashMap<>();
+    private final Map<Item, Integer>    salesQty = new HashMap<>();
     private final Map<Item, BigDecimal> salesRevenue = new HashMap<>();
     private int muffinsInStock = 25; // Start-of-day stock rule
 
@@ -45,7 +45,7 @@ public class Cafe {
                     break;
                 case 5:
                     System.out.println("Goodbye!");
-                    return; // exit the method, ending the program
+                    return; // exit the program
                 default:
                     System.out.println("Invalid option. Please choose 1-5.\n");
             }
@@ -55,7 +55,7 @@ public class Cafe {
     // --- Init helpers ---
     private void initPrices() {
         prices.put(Item.MUFFIN, price_muffin);
-        prices.put(Item.SHAKE, price_shake);
+        prices.put(Item.SHAKE,  price_shake);
         prices.put(Item.COFFEE, price_coffee);
     }
 
@@ -90,7 +90,7 @@ public class Cafe {
             Item selected = null;
             switch (choice) {
                 case 1: selected = Item.MUFFIN; break;
-                case 2: selected = Item.SHAKE; break;
+                case 2: selected = Item.SHAKE;  break;
                 case 3: selected = Item.COFFEE; break;
                 default:
                     System.out.println("Invalid selection.");
@@ -119,7 +119,9 @@ public class Cafe {
 
         BigDecimal total = BigDecimal.ZERO;
         for (Map.Entry<Item, Integer> entry : order.entrySet()) {
-            total = total.add(prices.get(entry.getKey()).multiply(new BigDecimal(entry.getValue())));
+            total = total.add(
+                prices.get(entry.getKey()).multiply(new BigDecimal(entry.getValue()))
+            );
         }
 
         System.out.println("Total: " + money(total));
@@ -146,11 +148,53 @@ public class Cafe {
     }
 
     private void handleReport() {
-        System.out.println("[Report] — implementation coming in A5.\n");
+        System.out.println("=== Sales Report ===");
+        System.out.printf("%-10s %-10s %-10s%n", "Item", "Quantity", "Revenue");
+        for (Item item : Item.values()) {
+            System.out.printf("%-10s %-10d %-10s%n",
+                    item.name(),
+                    salesQty.get(item),
+                    money(salesRevenue.get(item)));
+        }
+        System.out.printf("%nUnsold muffins in stock: %d%n", muffinsInStock);
+
+        int totalQty = 0; // simpler sum (no streams)
+        for (Integer qty : salesQty.values()) {
+            totalQty += qty;
+        }
+
+        BigDecimal totalRevenue = BigDecimal.ZERO;
+        for (BigDecimal rev : salesRevenue.values()) {
+            totalRevenue = totalRevenue.add(rev);
+        }
+        System.out.printf("Total items sold: %d%n", totalQty);
+        System.out.printf("Total revenue: %s%n%n", money(totalRevenue));
     }
 
     private void handleUpdatePrices() {
-        System.out.println("[Update Prices] — implementation coming in A6.\n");
+        System.out.println("Update which price? 1) Muffin  2) Shake  3) Coffee");
+        int choice = readInt("Your choice: ");
+
+        Item item = null;
+        switch (choice) {
+            case 1: item = Item.MUFFIN; break;
+            case 2: item = Item.SHAKE;  break;
+            case 3: item = Item.COFFEE; break;
+            default:
+                System.out.println("Invalid selection. Returning to menu.\n");
+                return;
+        }
+
+        BigDecimal current = prices.get(item);
+        System.out.println("Current price: " + money(current));
+        BigDecimal newPrice = readMoney("Enter new price: ");
+        if (newPrice.compareTo(BigDecimal.ZERO) < 0) {
+            System.out.println("Price cannot be negative.\n");
+            return;
+        }
+
+        prices.put(item, newPrice);
+        System.out.println(item.name() + " price updated to " + money(newPrice) + ".\n");
     }
 
     // --- Input & money helpers ---
