@@ -5,24 +5,33 @@ import java.util.*;
 
 public class Cafe {
     // --- Domain ---
-    enum Item { MUFFIN, SHAKE, COFFEE }
+    enum Item {
+        MUFFIN,
+        SHAKE,
+        COFFEE,
+        COFFEE_MUFFIN_COMBO, // new: Coffee + Muffin ($1 off)
+        SHAKE_MUFFIN_COMBO   // new: Shake + Muffin ($1 off)
+    }
 
-    // --- Defaults (Part A) ---
+    // --- Defaults (Part A base prices) ---
     private static final BigDecimal price_muffin = new BigDecimal("2.00");
     private static final BigDecimal price_shake  = new BigDecimal("3.00");
     private static final BigDecimal price_coffee = new BigDecimal("2.50");
 
+    // --- Combo discount (Part B) ---
+    private static final BigDecimal combo_discount = new BigDecimal("1.00"); // $1.00 off combos
+
     // --- State ---
-    private final Map<Item, BigDecimal> prices = new HashMap<>();
-    private final Map<Item, Integer>    salesQty = new HashMap<>();
-    private final Map<Item, BigDecimal> salesRevenue = new HashMap<>();
+    private final Map<Item, BigDecimal> prices = new HashMap<>();      // base items only
+    private final Map<Item, Integer>    salesQty = new HashMap<>();    // includes combos
+    private final Map<Item, BigDecimal> salesRevenue = new HashMap<>();// includes combos
     private int muffinsInStock = 25; // Start-of-day stock rule
 
     private final Scanner scanner = new Scanner(System.in);
 
     public Cafe() {
         initPrices();
-        initSales();
+        initSales(); // includes combos via Item.values()
     }
 
     // --- App loop ---
@@ -57,6 +66,7 @@ public class Cafe {
         prices.put(Item.MUFFIN, price_muffin);
         prices.put(Item.SHAKE,  price_shake);
         prices.put(Item.COFFEE, price_coffee);
+        // Note: combos are dynamically priced from base items; not stored in prices map
     }
 
     private void initSales() {
@@ -68,10 +78,10 @@ public class Cafe {
 
     private void printMenu() {
         System.out.println("=== Cafe for Geeks ===");
-        System.out.println("1) Order");
+        System.out.println("1) Order  (includes combos — $1.00 off)");
         System.out.println("2) Bake Muffins (+25)");
         System.out.println("3) Sales Report");
-        System.out.println("4) Update Prices");
+        System.out.println("4) Update Prices (base items)");
         System.out.println("5) Exit");
     }
 
@@ -79,19 +89,30 @@ public class Cafe {
     private void handleOrder() {
         Map<Item, Integer> order = new HashMap<>();
         while (true) {
-            System.out.println("Select an item: 1) Muffin 2) Shake 3) Coffee 4) Cancel order 5) No more");
+            // Multi-line product list with combo info
+            System.out.println("Select an item:");
+            System.out.println(" 1) Muffin");
+            System.out.println(" 2) Shake");
+            System.out.println(" 3) Coffee");
+            System.out.println(" 4) Coffee + Muffin Combo ($1.00 off)");
+            System.out.println(" 5) Shake + Muffin Combo ($1.00 off)");
+            System.out.println(" 6) Cancel order");
+            System.out.println(" 7) No more");
             int choice = readInt("Your choice: ");
-            if (choice == 4) {
+
+            if (choice == 6) {
                 System.out.println("Order cancelled.\n");
                 return;
             }
-            if (choice == 5) break;
+            if (choice == 7) break;
 
             Item selected = null;
             switch (choice) {
                 case 1: selected = Item.MUFFIN; break;
                 case 2: selected = Item.SHAKE;  break;
                 case 3: selected = Item.COFFEE; break;
+                case 4: selected = Item.COFFEE_MUFFIN_COMBO; break;
+                case 5: selected = Item.SHAKE_MUFFIN_COMBO;  break;
                 default:
                     System.out.println("Invalid selection.");
                     continue;
@@ -103,18 +124,23 @@ public class Cafe {
                 continue;
             }
 
-            // Early muffin stock check (cumulative within this order)
-            if (selected == Item.MUFFIN) {
-                int currentMuffinsInOrder = order.getOrDefault(Item.MUFFIN, 0);
-                if (currentMuffinsInOrder + qty > muffinsInStock) {
+            // Early muffin stock check (cumulative within this order), combos consume 1 muffin each
+            int muffinsAlreadyInOrder =
+                    order.getOrDefault(Item.MUFFIN, 0)
+                  + order.getOrDefault(Item.COFFEE_MUFFIN_COMBO, 0)
+                  + order.getOrDefault(Item.SHAKE_MUFFIN_COMBO, 0);
+
+            if (selected == Item.MUFFIN
+                || selected == Item.COFFEE_MUFFIN_COMBO
+                || selected == Item.SHAKE_MUFFIN_COMBO) {
+                int muffinsNeededForThisSelection = qty;
+                if (muffinsAlreadyInOrder + muffinsNeededForThisSelection > muffinsInStock) {
                     System.out.println("Not enough muffins in stock. Order cancelled.\n");
                     return;
                 }
-                order.put(Item.MUFFIN, currentMuffinsInOrder + qty);
-            } else {
-                // Non-muffin items have no stock limit
-                order.put(selected, order.getOrDefault(selected, 0) + qty);
             }
+
+            order.put(selected, order.getOrDefault(selected, 0) + qty);
         }
 
         if (order.isEmpty()) {
@@ -122,12 +148,13 @@ public class Cafe {
             return;
         }
 
-        // (No need for a second muffin stock check here since we already validated during item entry.)
-
-        // Calculate total
+        // Calculate total using dynamic combo pricing
         BigDecimal total = BigDecimal.ZERO;
         for (Map.Entry<Item, Integer> entry : order.entrySet()) {
-            total = total.add(prices.get(entry.getKey()).multiply(new BigDecimal(entry.getValue())));
+            Item it = entry.getKey();
+            int qty = entry.getValue();
+            BigDecimal unitPrice = comboPrice(it);
+            total = total.add(unitPrice.multiply(new BigDecimal(qty)));
         }
 
         System.out.println("Total: " + money(total));
@@ -137,19 +164,24 @@ public class Cafe {
             return;
         }
 
-        // Process order
-        int muffinsRequested = order.getOrDefault(Item.MUFFIN, 0);
+        // Process order: reduce muffin stock for MUFFIN and both COMBOs
+        int muffinsRequested =
+                order.getOrDefault(Item.MUFFIN, 0)
+              + order.getOrDefault(Item.COFFEE_MUFFIN_COMBO, 0)
+              + order.getOrDefault(Item.SHAKE_MUFFIN_COMBO, 0);
         muffinsInStock -= muffinsRequested;
+
         for (Map.Entry<Item, Integer> entry : order.entrySet()) {
-            salesQty.put(entry.getKey(), salesQty.get(entry.getKey()) + entry.getValue());
-            BigDecimal revenue = prices.get(entry.getKey()).multiply(new BigDecimal(entry.getValue()));
-            salesRevenue.put(entry.getKey(), salesRevenue.get(entry.getKey()).add(revenue));
+            Item it = entry.getKey();
+            int qty = entry.getValue();
+            BigDecimal unitPrice = comboPrice(it);
+            salesQty.put(it, salesQty.get(it) + qty);
+            salesRevenue.put(it, salesRevenue.get(it).add(unitPrice.multiply(new BigDecimal(qty))));
         }
 
         BigDecimal change = payment.subtract(total);
         System.out.println("Change: " + money(change) + "\n");
     }
-
 
     private void handleBake() {
         muffinsInStock += 25;
@@ -158,26 +190,28 @@ public class Cafe {
 
     private void handleReport() {
         System.out.println("=== Sales Report ===");
-        System.out.printf("%-10s %-10s %-10s%n", "Item", "Quantity", "Revenue");
+        System.out.printf("%-22s %-10s %-10s%n", "Item", "Quantity", "Revenue");
         for (Item item : Item.values()) {
-            System.out.printf("%-10s %-10d %-10s%n",
-                    item.name(),
+            System.out.printf("%-22s %-10d %-10s%n",
+                    label(item),
                     salesQty.get(item),
                     money(salesRevenue.get(item)));
         }
-        System.out.printf("%nUnsold muffins in stock: %d%n", muffinsInStock);
-
-        int totalQty = 0; // simpler sum (no streams)
+        System.out.println("--------------------------");
+        
+        int totalQty = 0; // beginner-friendly sum
         for (Integer qty : salesQty.values()) {
-            totalQty += qty;
+        	totalQty += qty;
         }
-
+        
         BigDecimal totalRevenue = BigDecimal.ZERO;
         for (BigDecimal rev : salesRevenue.values()) {
-            totalRevenue = totalRevenue.add(rev);
+        	totalRevenue = totalRevenue.add(rev);
         }
-        System.out.printf("Total items sold: %d%n", totalQty);
-        System.out.printf("Total revenue: %s%n%n", money(totalRevenue));
+        
+        System.out.printf("%-22s %-10s %-10s%n", "", totalQty, money(totalRevenue));
+        System.out.printf("%nUnsold muffins in stock: %d%n", muffinsInStock);
+
     }
 
     private void handleUpdatePrices() {
@@ -206,11 +240,11 @@ public class Cafe {
         System.out.println(item.name() + " price updated to " + money(newPrice) + ".\n");
     }
 
-    // --- Input & money helpers ---
+    // --- Helpers ---
     private int readInt(String prompt) {
         System.out.print(prompt);
         while (!scanner.hasNextInt()) {
-//            System.out.println("Please enter a whole number.");
+        	System.out.println("Please enter a valid integer.");
             scanner.nextLine();
             System.out.print(prompt);
         }
@@ -234,5 +268,34 @@ public class Cafe {
     static String money(BigDecimal amount) {
         if (amount == null) return "$0.00";
         return "$" + amount.setScale(2, RoundingMode.HALF_UP).toPlainString();
+    }
+
+    // Friendly label for combos in report/menu rows
+    private String label(Item item) {
+        switch (item) {
+            case COFFEE_MUFFIN_COMBO: return "Coffee + Muffin (combo)";
+            case SHAKE_MUFFIN_COMBO:  return "Shake + Muffin (combo)";
+            default: return item.name();
+        }
+    }
+
+    // Dynamic unit price: base items from 'prices', combos = sum(base) - $1.00
+    private BigDecimal comboPrice(Item item) {
+        switch (item) {
+            case MUFFIN:
+            case SHAKE:
+            case COFFEE:
+                return prices.get(item);
+            case COFFEE_MUFFIN_COMBO:
+                return prices.get(Item.COFFEE)
+                        .add(prices.get(Item.MUFFIN))
+                        .subtract(combo_discount);
+            case SHAKE_MUFFIN_COMBO:
+                return prices.get(Item.SHAKE)
+                        .add(prices.get(Item.MUFFIN))
+                        .subtract(combo_discount);
+            default:
+                return BigDecimal.ZERO;
+        }
     }
 }
