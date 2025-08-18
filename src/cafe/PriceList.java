@@ -4,22 +4,22 @@ import java.math.*;
 import java.util.*;
 
 public class PriceList {
-    private final Map<ProductType, BigDecimal> base = new EnumMap<>(ProductType.class);
+    private Map<ProductType, BigDecimal> basePrice = new HashMap<>();
     private BigDecimal comboDiscount = new BigDecimal("1.00"); // $1 off
 
     public PriceList(BigDecimal muffin, BigDecimal shake, BigDecimal coffee) {
-        base.put(ProductType.MUFFIN, muffin);
-        base.put(ProductType.SHAKE,  shake);
-        base.put(ProductType.COFFEE, coffee);
+        basePrice.put(ProductType.MUFFIN, muffin);
+        basePrice.put(ProductType.SHAKE,  shake);
+        basePrice.put(ProductType.COFFEE, coffee);
     }
 
     public BigDecimal getBase(ProductType p) {
-        return base.get(p);
+        return basePrice.get(p);
     }
 
     public void setBase(ProductType p, BigDecimal price) {
         if (p == ProductType.COFFEE || p == ProductType.MUFFIN || p == ProductType.SHAKE) {
-            base.put(p, price);
+            basePrice.put(p, price);
         }
     }
 
@@ -39,14 +39,14 @@ public class PriceList {
             case MUFFIN:
             case SHAKE:
             case COFFEE:
-                return base.get(p);
+                return basePrice.get(p);
             case COFFEE_MUFFIN_COMBO:
-                return base.get(ProductType.COFFEE)
-                        .add(base.get(ProductType.MUFFIN))
+                return basePrice.get(ProductType.COFFEE)
+                        .add(basePrice.get(ProductType.MUFFIN))
                         .subtract(comboDiscount);
             case SHAKE_MUFFIN_COMBO:
-                return base.get(ProductType.SHAKE)
-                        .add(base.get(ProductType.MUFFIN))
+                return basePrice.get(ProductType.SHAKE)
+                        .add(basePrice.get(ProductType.MUFFIN))
                         .subtract(comboDiscount);
             default:
                 return BigDecimal.ZERO;

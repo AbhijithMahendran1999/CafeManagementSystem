@@ -4,8 +4,8 @@ import java.math.*;
 import java.util.*;
 
 public class SalesTracker {
-    private final Map<ProductType, Integer> qty = new EnumMap<>(ProductType.class);
-    private final Map<ProductType, BigDecimal> revenue = new EnumMap<>(ProductType.class);
+    private final Map<ProductType, Integer> qty = new HashMap<>();
+    private final Map<ProductType, BigDecimal> revenue = new HashMap<>();
 
     public SalesTracker() {
         for (ProductType p : ProductType.values()) {
@@ -15,12 +15,12 @@ public class SalesTracker {
     }
 
     public void record(Order order, PriceList prices) {
-        for (Map.Entry<ProductType, Integer> e : order.lines().entrySet()) {
+        for (Map.Entry<ProductType, Integer> e : order.orders().entrySet()) {
             ProductType p = e.getKey();
             int count = e.getValue();
-            BigDecimal line = prices.priceOf(p).multiply(new BigDecimal(count));
+            BigDecimal rev = prices.priceOf(p).multiply(new BigDecimal(count));
             qty.put(p, qty.get(p) + count);
-            revenue.put(p, revenue.get(p).add(line));
+            revenue.put(p, revenue.get(p).add(rev));
         }
     }
 

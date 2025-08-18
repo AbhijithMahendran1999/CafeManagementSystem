@@ -30,7 +30,9 @@ public class Cafe {
     }
 
     private void printMenu() {
-        System.out.println("=== Cafe for Geeks ===");
+        System.out.println("==============================================");
+        System.out.println("              The Geek Cafe");
+        System.out.println("==============================================");
         System.out.println("1) Order  (includes combos — $1.00 off)");
         System.out.println("2) Bake Muffins (+25)");
         System.out.println("3) Sales Report");
@@ -110,17 +112,27 @@ public class Cafe {
     }
 
     private void handleReport() {
-        System.out.println("=== Sales Report ===");
-        System.out.printf("%-26s %-10s %-10s%n", "Item", "Quantity", "Revenue");
+        // Header: Unsold muffins
+        System.out.printf("\nUnsold Muffins: %d%n%n", inventory.getMuffinsInStock());
+
+        // Section title
+        System.out.println("Total Sales:\n");
+
+        // Per-product lines:  Label:   qty    $revenue
+        // (labels left; qty/revenue aligned to the right like in your image)
         for (ProductType p : ProductType.values()) {
-            System.out.printf("%-26s %-10d %-10s%n",
-                    label(p),
+            System.out.printf("%-30s %5d   %s%n",
+                    label(p) + ":",             // e.g., "Muffin:" / "Coffee + Muffin (combo):"
                     sales.qtyOf(p),
                     money(sales.revenueOf(p)));
         }
-        System.out.printf("%nUnsold muffins in stock: %d%n", inventory.getMuffinsInStock());
-        System.out.printf("Total items sold: %d%n", sales.totalQty());
-        System.out.printf("Total revenue: %s%n%n", money(sales.totalRevenue()));
+
+        // Separator and grand totals (values aligned under the columns)
+        System.out.println("\n----------------------------------------------");
+        System.out.printf("%30s %5d   %s%n%n",       // pad left so numbers line up
+                "",                                  // no label on the total line (matches your picture)
+                sales.totalQty(),
+                money(sales.totalRevenue()));
     }
 
     private void handleUpdatePrices() {
@@ -139,8 +151,8 @@ public class Cafe {
 
         System.out.println("Current price: " + money(prices.getBase(p)));
         BigDecimal newPrice = readMoney("Enter new price: ");
-        if (newPrice.compareTo(BigDecimal.ZERO) < 0) {
-            System.out.println("Price cannot be negative.\n");
+        if (newPrice.compareTo(BigDecimal.ZERO) <= 0) {
+            System.out.println("Price cannot be zero or negative.\n");
             return;
         }
         prices.setBase(p, newPrice);
@@ -151,6 +163,7 @@ public class Cafe {
     private int readInt(String prompt) {
         System.out.print(prompt);
         while (!scanner.hasNextInt()) {
+        	System.out.println("Please enter a valid integer.");
             scanner.nextLine();
             System.out.print(prompt);
         }
@@ -173,7 +186,7 @@ public class Cafe {
 
     static String money(BigDecimal amount) {
         if (amount == null) return "$0.00";
-        return "$" + amount.setScale(2, RoundingMode.HALF_UP).toPlainString();
+        return "$" + amount.setScale(2, RoundingMode.HALF_UP);
     }
 
     private String label(ProductType p) {
