@@ -9,13 +9,16 @@ CafeForGeeks is a basic Java based cafe management system. It implements a menu-
 5) Update Prices: There is an option to update the price of a food item.
 6) Exit the Program: Safely exit the program.
 
-Input is validated everywhere to handle invalid choices and to prevent the program from crashing.\
+Input is validated everywhere to handle invalid choices and to prevent the program from crashing.
 
 Compiling and running the program from the terminal:
 
 1) Navigate to the source code folder and run:
+
 		javac <packageName>/*.java
+		
 2) After compilation,run the main class with:
+
 		java <packageName>.Main
 		
 Replace <packageName> with the actual name of the package ( In my codebase the package is named "cafe")
