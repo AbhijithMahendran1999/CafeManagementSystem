@@ -29,7 +29,7 @@ public class SalesTracker {
 
     public int totalQty() {
         int sum = 0;
-        for (int v : qty.values()) sum += v;
+        for (int x : qty.values()) sum += x;
         return sum;
     }
 
