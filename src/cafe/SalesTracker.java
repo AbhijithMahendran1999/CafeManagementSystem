@@ -3,7 +3,9 @@ package cafe;
 import java.math.*;
 import java.util.*;
 
+// To maintain global sales statistics like quantity and total revenue
 public class SalesTracker {
+	
     private final Map<ProductType, Integer> qty = new HashMap<>();
     private final Map<ProductType, BigDecimal> revenue = new HashMap<>();
 
@@ -14,6 +16,7 @@ public class SalesTracker {
         }
     }
 
+    // Update the total quantity and revenue
     public void record(Order order, PriceList prices) {
         for (Map.Entry<ProductType, Integer> e : order.orders().entrySet()) {
             ProductType p = e.getKey();

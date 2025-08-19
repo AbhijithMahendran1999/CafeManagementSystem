@@ -3,10 +3,11 @@ package cafe;
 import java.math.*;
 import java.util.*;
 
+// Main class running the program
 public class Cafe {
     private final Scanner scanner = new Scanner(System.in);
 
-    // Core objects (OO separation of concerns)
+    // Having separate objects having methods to handle specific functionality
     private final PriceList prices = new PriceList(
             new BigDecimal("2.00"),  // muffin
             new BigDecimal("3.00"),  // shake
@@ -14,17 +15,18 @@ public class Cafe {
     private final Inventory inventory = new Inventory(25);
     private final SalesTracker sales = new SalesTracker();
 
+    // Method invoked in main
     public void run() {
         while (true) {
             printMenu();
-            int choice = readInt("Choose an option: ");
+            int choice = readInt("Please choose an option: ");
             switch (choice) {
                 case 1: handleOrder(); break;
                 case 2: handleBake(); break;
                 case 3: handleReport(); break;
                 case 4: handleUpdatePrices(); break;
-                case 5: System.out.println("Goodbye!"); return;
-                default: System.out.println("Invalid option. Please choose 1-5.\n");
+                case 5: System.out.println("Exiting!"); return;
+                default: System.out.println("Invalid choice. Please choose an option from 1-5.\n");
             }
         }
     }
@@ -33,18 +35,18 @@ public class Cafe {
         System.out.println("==============================================");
         System.out.println("              The Geek Cafe");
         System.out.println("==============================================");
-        System.out.println("1) Order  (includes combos — $1.00 off)");
+        System.out.println("1) Order");
         System.out.println("2) Bake Muffins (+25)");
-        System.out.println("3) Sales Report");
+        System.out.println("3) Show Sales Report");
         System.out.println("4) Update Prices (base items)");
         System.out.println("5) Exit");
     }
 
-    // ===== Handlers =====
+    // Method to handle orders
     private void handleOrder() {
         Order order = new Order();
         while (true) {
-            System.out.println("Select an item:");
+            System.out.println("Select the food item:");
             System.out.println(" 1) Muffin");
             System.out.println(" 2) Shake");
             System.out.println(" 3) Coffee");
@@ -70,14 +72,14 @@ public class Cafe {
             int qty = readInt("Enter quantity: ");
             if (qty <= 0) { System.out.println("Quantity must be positive."); continue; }
 
-            // Early muffin stock check (cumulative within this order)
+            // Muffins stock check
             int muffinsIfAdded = order.muffinsRequired();
             if (selected == ProductType.MUFFIN
              || selected == ProductType.COFFEE_MUFFIN_COMBO
              || selected == ProductType.SHAKE_MUFFIN_COMBO) {
                 muffinsIfAdded += qty;
                 if (!inventory.canFulfillMuffins(muffinsIfAdded)) {
-                    System.out.println("Not enough muffins in stock. Order cancelled.\n");
+                    System.out.println("Sorry! Not enough muffins left. Please bake more. Order cancelled.\n");
                     return;
                 }
             }
@@ -91,52 +93,42 @@ public class Cafe {
         }
 
         BigDecimal total = order.total(prices);
-        System.out.println("Total: " + money(total));
-        BigDecimal payment = readMoney("Enter payment: ");
+        System.out.println("Total cost of order is : " + money(total));
+        BigDecimal payment = readMoney("Please enter money for payment : ");
         if (payment.compareTo(total) < 0) {
-            System.out.println("Insufficient payment. Order cancelled.\n");
+            System.out.println("Insufficient amount. Order cancelled.\n");
             return;
         }
 
-        // Commit: consume muffins and record sales
+        // If payment done, reduce muffins stock
         inventory.consumeMuffins(order.muffinsRequired());
         sales.record(order, prices);
 
         BigDecimal change = payment.subtract(total);
-        System.out.println("Change: " + money(change) + "\n");
+        System.out.println("Change returned : " + money(change) + "\n");
     }
 
     private void handleBake() {
         inventory.bakeMuffins(25);
-        System.out.println("Baked 25 muffins. Current stock: " + inventory.getMuffinsInStock() + "\n");
+        System.out.println(" Ok, 25 Muffins added. Total muffins in café is now" + inventory.getMuffinsInStock() + "\n");
     }
 
+    // Method to display sales report
     private void handleReport() {
-        // Header: Unsold muffins
+    	
         System.out.printf("\nUnsold Muffins: %d%n%n", inventory.getMuffinsInStock());
-
-        // Section title
         System.out.println("Total Sales:\n");
 
-        // Per-product lines:  Label:   qty    $revenue
-        // (labels left; qty/revenue aligned to the right like in your image)
         for (ProductType p : ProductType.values()) {
-            System.out.printf("%-30s %5d   %s%n",
-                    label(p) + ":",             // e.g., "Muffin:" / "Coffee + Muffin (combo):"
-                    sales.qtyOf(p),
-                    money(sales.revenueOf(p)));
+            System.out.printf("%-30s %5d   %s%n", label(p) + ":", sales.qtyOf(p), money(sales.revenueOf(p)));
         }
 
-        // Separator and grand totals (values aligned under the columns)
         System.out.println("\n----------------------------------------------");
-        System.out.printf("%30s %5d   %s%n%n",       // pad left so numbers line up
-                "",                                  // no label on the total line (matches your picture)
-                sales.totalQty(),
-                money(sales.totalRevenue()));
+        System.out.printf("%30s %5d   %s%n%n", "", sales.totalQty(), money(sales.totalRevenue()));
     }
 
     private void handleUpdatePrices() {
-        System.out.println("Update which price? 1) Muffin  2) Shake  3) Coffee");
+        System.out.println("Update price of which food item? 1) Muffin  2) Shake  3) Coffee");
         int choice = readInt("Your choice: ");
 
         ProductType p = null;
@@ -145,12 +137,12 @@ public class Cafe {
             case 2: p = ProductType.SHAKE;  break;
             case 3: p = ProductType.COFFEE; break;
             default:
-                System.out.println("Invalid selection. Returning to menu.\n");
+                System.out.println("Invalid choice. Returning to main menu.\n");
                 return;
         }
 
-        System.out.println("Current price: " + money(prices.getBase(p)));
-        BigDecimal newPrice = readMoney("Enter new price: ");
+        System.out.println("Current price is : " + money(prices.getBase(p)));
+        BigDecimal newPrice = readMoney("Enter new price : ");
         if (newPrice.compareTo(BigDecimal.ZERO) <= 0) {
             System.out.println("Price cannot be zero or negative.\n");
             return;
@@ -159,7 +151,7 @@ public class Cafe {
         System.out.println(p.name() + " price updated to " + money(newPrice) + ".\n");
     }
 
-    // ===== Helpers =====
+    // Helper method to read and validate integer input gracefully
     private int readInt(String prompt) {
         System.out.print(prompt);
         while (!scanner.hasNextInt()) {
@@ -172,6 +164,7 @@ public class Cafe {
         return val;
     }
 
+    // Helper method to read and validate currency input gracefully
     private BigDecimal readMoney(String prompt) {
         System.out.print(prompt);
         while (!scanner.hasNextBigDecimal()) {
@@ -181,6 +174,7 @@ public class Cafe {
         }
         BigDecimal val = scanner.nextBigDecimal();
         scanner.nextLine();
+        // Rounding up to 2 decimal places for amount values
         return val.setScale(2, RoundingMode.HALF_UP);
     }
 

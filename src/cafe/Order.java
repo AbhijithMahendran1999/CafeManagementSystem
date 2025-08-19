@@ -3,7 +3,9 @@ package cafe;
 import java.math.*;
 import java.util.*;
 
+// To handle the order logic
 public class Order {
+	
     private Map<ProductType, Integer> order = new HashMap<>();
 
     public void add(ProductType p, int qty) {
@@ -14,7 +16,7 @@ public class Order {
         return order;
     }
 
-    /** How many muffins this order would consume (combos count as 1 each) */
+    // Count the total muffins required to complete an order( Since we can only have limited muffins in stock)
     public int muffinsRequired() {
         int muffins = 0;
         muffins += order.getOrDefault(ProductType.MUFFIN, 0);
@@ -23,7 +25,7 @@ public class Order {
         return muffins;
     }
 
-    /** Total using dynamic prices from PriceList (combos included) */
+    // To get total order amount
     public BigDecimal total(PriceList priceList) {
         BigDecimal total = BigDecimal.ZERO;
         for (Map.Entry<ProductType, Integer> e : order.entrySet()) {

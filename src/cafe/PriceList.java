@@ -3,9 +3,13 @@ package cafe;
 import java.math.*;
 import java.util.*;
 
+//To handle setting and fetching price of products including combos
 public class PriceList {
+	
     private Map<ProductType, BigDecimal> basePrice = new HashMap<>();
-    private BigDecimal comboDiscount = new BigDecimal("1.00"); // $1 off
+    
+    // $1 off for combos
+    private BigDecimal comboDiscount = new BigDecimal("1.00"); 
 
     public PriceList(BigDecimal muffin, BigDecimal shake, BigDecimal coffee) {
         basePrice.put(ProductType.MUFFIN, muffin);
@@ -18,6 +22,7 @@ public class PriceList {
     }
 
     public void setBase(ProductType p, BigDecimal price) {
+    	// Can only set prices for individual products(not combos)
         if (p == ProductType.COFFEE || p == ProductType.MUFFIN || p == ProductType.SHAKE) {
             basePrice.put(p, price);
         }
@@ -33,7 +38,7 @@ public class PriceList {
         }
     }
 
-    /** Dynamic unit price for any product, including combos */
+    //Method to fetch the price of a particular product
     public BigDecimal priceOf(ProductType p) {
         switch (p) {
             case MUFFIN:
@@ -41,13 +46,9 @@ public class PriceList {
             case COFFEE:
                 return basePrice.get(p);
             case COFFEE_MUFFIN_COMBO:
-                return basePrice.get(ProductType.COFFEE)
-                        .add(basePrice.get(ProductType.MUFFIN))
-                        .subtract(comboDiscount);
+                return basePrice.get(ProductType.COFFEE).add(basePrice.get(ProductType.MUFFIN)).subtract(comboDiscount);
             case SHAKE_MUFFIN_COMBO:
-                return basePrice.get(ProductType.SHAKE)
-                        .add(basePrice.get(ProductType.MUFFIN))
-                        .subtract(comboDiscount);
+                return basePrice.get(ProductType.SHAKE).add(basePrice.get(ProductType.MUFFIN)).subtract(comboDiscount);
             default:
                 return BigDecimal.ZERO;
         }
