@@ -24,6 +24,8 @@ Compiling and running the program from the terminal:
 		
 Replace <packageName> with the actual name of the package ( In my codebase the package is named "cafe")
 
+Video Recording Link : https://rmiteduau-my.sharepoint.com/:v:/r/personal/s4112130_student_rmit_edu_au/Documents/Recording-20250819_132157.webm?csf=1&web=1&e=udPx5R&nav=eyJyZWZlcnJhbEluZm8iOnsicmVmZXJyYWxBcHAiOiJTdHJlYW1XZWJBcHAiLCJyZWZlcnJhbFZpZXciOiJTaGFyZURpYWxvZy1MaW5rIiwicmVmZXJyYWxBcHBQbGF0Zm9ybSI6IldlYiIsInJlZmVycmFsTW9kZSI6InZpZXcifX0%3D
+
 References:
 
 [1] GeeksforGeeks, “BigDecimal Class in Java,” 2025. [Online]. Available:
