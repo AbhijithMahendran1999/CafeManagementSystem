@@ -10,6 +10,7 @@ CafeForGeeks is a basic Java based cafe management system. It implements a menu-
 6) Exit the Program: Safely exit the program.
 
 Input is validated everywhere to handle invalid choices and to prevent the program from crashing.
+Note: Combos are considered as a product of their own and hence the sales report would not be showing an incremented base product quantity for combos. This is to keep the integrity of the sales report and the program.
 
 Compiling and running the program from the terminal:
 
